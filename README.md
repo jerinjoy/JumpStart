@@ -29,17 +29,22 @@ curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -
 # meson
 sudo apt install meson
 
-# Build Spike from source
-# See: https://github.com/riscv-software-src/riscv-isa-sim
 ```
+
+#### Build Spike from source
+
+See: https://github.com/riscv-software-src/riscv-isa-sim
 
 ### macOS
 
 ```
 brew tap riscv-software-src/riscv
-brew install riscv-tools riscv-isa-sim riscv-gnu-toolchain
-brew install just meson
+brew install riscv-gnu-toolchain just meson
 ```
+
+#### Build Spike from source
+
+See: https://github.com/riscv-software-src/riscv-isa-sim
 
 ## Test the Environment
 
