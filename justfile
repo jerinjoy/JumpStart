@@ -28,14 +28,14 @@ num_test_processes := "max"
 default:
     @just test-all
 
-setup compiler buildtype target backend="c":
+setup compiler buildtype target backend="rust":
     @# Map rust_backend to rust for meson option
     meson setup {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir --cross-file cross_compile/public/{{compiler}}_options.txt --cross-file cross_compile/{{compiler}}.txt --buildtype {{buildtype}} -Drun_target={{target}} -Dboot_config=fw-none -Drivos_internal_build=false -Djumpstart_backend={{ if backend == "rust_backend" { "rust" } else { backend } }}
 
-build compiler buildtype target backend="c": (setup compiler buildtype target backend)
+build compiler buildtype target backend="rust": (setup compiler buildtype target backend)
     meson compile -C {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir
 
-test compiler buildtype target backend="c": (build compiler buildtype target backend)
+test compiler buildtype target backend="rust": (build compiler buildtype target backend)
     @case {{num_test_processes}} in \
         max) \
             num_processes_option=""; \
@@ -46,7 +46,7 @@ test compiler buildtype target backend="c": (build compiler buildtype target bac
     esac; \
     meson test -C {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir $num_processes_option
 
-clean_internal compiler buildtype target backend="c":
+clean_internal compiler buildtype target backend="rust":
     rm -rf {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir
 
 build-all-spike-gcc:
