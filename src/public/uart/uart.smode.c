@@ -8,13 +8,12 @@
 #include <inttypes.h>
 
 void setup_uart(void);
+void mark_uart_as_enabled(void);
 
-__attr_stext __attribute__((noreturn)) void putch(char c) {
-  // Implement putch code here
-  (void)c;
-  jumpstart_smode_fail();
+__attr_stext void putch(char c) {
+  *(volatile char *)UART_BASE_ADDRESS = c;
 }
 
 __attr_stext void setup_uart(void) {
-  // Implement Uart Setup code here
+  mark_uart_as_enabled();
 }

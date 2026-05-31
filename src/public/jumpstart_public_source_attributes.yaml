@@ -40,26 +40,26 @@ jumpstart_mmode:
     xwr: "0b001"
     umode: "0b0"
     pma_memory_type: "wb"
-    linker_script_section: ".rodata"
+    linker_script_section: ".rodata,.rodata.*"
   sdata:
     page_size: 0x1000
     xwr: "0b011"
     umode: "0b0"
     pma_memory_type: "wb"
-    linker_script_section: ".sdata"
+    linker_script_section: ".sdata,.sdata.*"
 jumpstart_smode:
   text:
     page_size: 0x1000
     xwr: "0b101"
     umode: "0b0"
     pma_memory_type: "wb"
-    linker_script_section: ".jumpstart.cpu.text.smode.init.enter,.jumpstart.cpu.text.smode.init,.jumpstart.cpu.text.smode"
+    linker_script_section: ".jumpstart.cpu.text.smode.init.enter,.jumpstart.cpu.text.smode.init,.jumpstart.cpu.text.smode,.text._ZN*,.text._R*,.text.unlikely*,.text.rust_*,.text.core*,.text.alloc*,.text.compiler_builtins*,.text.memcpy,.text.memset,.text.memmove,.text.memcmp,.text.strlen,.text.fmax*,.text.fmin*,.text.fmod*,.text.fmaximum*,.text.fminimum*,.text.hypot*,.text.ldexp*,.text.lgamma*,.text.log*,.text.pow*,.text.rint*,.text.round*,.text.sin*,.text.sqrt*,.text.tan*,.text.tgamma*,.text.trunc*"
   bss:
     page_size: 0x1000
     xwr: "0b011"
     umode: "0b0"
     pma_memory_type: "wb"
-    linker_script_section: ".bss,.sbss,.sbss.*"
+    linker_script_section: ".bss,.sbss,.sbss.*,.bss.*"
   heap:
     xwr: "0b011"
     umode: "0b0"
@@ -94,12 +94,12 @@ diag_attributes:
   num_pages_for_jumpstart_mmode_text: 3
   num_pages_per_cpu_for_jumpstart_mmode_data: 2
   num_pages_per_cpu_for_jumpstart_mmode_stack: 1
-  num_pages_for_jumpstart_smode_text: 5
-  num_pages_for_jumpstart_mmode_sdata: 1
-  num_pages_for_jumpstart_smode_bss: 7
+  num_pages_for_jumpstart_smode_text: 50
+  num_pages_for_jumpstart_mmode_sdata: 5
+  num_pages_for_jumpstart_smode_bss: 20
   page_size_for_jumpstart_smode_heap: 0x200000
   num_pages_for_jumpstart_smode_heap: 2
-  num_pages_for_jumpstart_mmode_rodata: 2
+  num_pages_for_jumpstart_mmode_rodata: 20
   num_pages_for_jumpstart_umode_text: 1
   num_pages_per_cpu_for_jumpstart_umode_stack: 1
   max_num_pagetable_pages_per_stage: 30
@@ -161,6 +161,7 @@ defines:
   STIMER_RESET: nop
   MTIMER_RESET: nop
   CPU_CLOCK_FREQUENCY_IN_MHZ: 1
+  UART_BASE_ADDRESS: 0x10000000
   BACKING_MEMORY_DDR: 1
   MEMORY_TYPE_WB: 3
   MEMORY_TYPE_WC: 1
