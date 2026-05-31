@@ -28,14 +28,14 @@ num_test_processes := "max"
 default:
     @just test-all
 
-setup compiler buildtype target:
-    @# For fw-none boot_config, priv modes and diag attributes are empty (defaults)
-    meson setup {{compiler}}-{{buildtype}}-{{target}}-public-fw-none.builddir --cross-file cross_compile/public/{{compiler}}_options.txt --cross-file cross_compile/{{compiler}}.txt --buildtype {{buildtype}} -Drun_target={{target}} -Dboot_config=fw-none -Drivos_internal_build=false
+setup compiler buildtype target backend="c":
+    @# Map rust_backend to rust for meson option
+    meson setup {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir --cross-file cross_compile/public/{{compiler}}_options.txt --cross-file cross_compile/{{compiler}}.txt --buildtype {{buildtype}} -Drun_target={{target}} -Dboot_config=fw-none -Drivos_internal_build=false -Djumpstart_backend={{ if backend == "rust_backend" { "rust" } else { backend } }}
 
-build compiler buildtype target: (setup compiler buildtype target)
-    meson compile -C {{compiler}}-{{buildtype}}-{{target}}-public-fw-none.builddir
+build compiler buildtype target backend="c": (setup compiler buildtype target backend)
+    meson compile -C {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir
 
-test compiler buildtype target: (build compiler buildtype target)
+test compiler buildtype target backend="c": (build compiler buildtype target backend)
     @case {{num_test_processes}} in \
         max) \
             num_processes_option=""; \
@@ -44,10 +44,10 @@ test compiler buildtype target: (build compiler buildtype target)
             num_processes_option="-j "{{num_test_processes}}""; \
             ;; \
     esac; \
-    meson test -C {{compiler}}-{{buildtype}}-{{target}}-public-fw-none.builddir $num_processes_option
+    meson test -C {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir $num_processes_option
 
-clean_internal compiler buildtype target:
-    rm -rf {{compiler}}-{{buildtype}}-{{target}}-public-fw-none.builddir
+clean_internal compiler buildtype target backend="c":
+    rm -rf {{compiler}}-{{buildtype}}-{{target}}-{{backend}}-public-fw-none.builddir
 
 build-all-spike-gcc:
     @just build gcc debug spike

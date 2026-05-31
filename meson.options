@@ -93,3 +93,9 @@ option('mcmodel',
                      '- medlow : Code and data must be within 2GB of the program counter. \n' +
                      '- medany : Code and data must be within 2GB of the program counter or global pointer. \n' +
                      '- large  : No restrictions on code and data placement.')
+
+option('jumpstart_backend',
+       type : 'combo',
+       choices: ['c', 'rust'],
+       value : 'c',
+       description : 'The backend to use for JumpStart.')
