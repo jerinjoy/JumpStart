@@ -53,14 +53,15 @@ foreach unit_test : unit_tests
     endforeach
 
     if fs.is_file(test_root_dir + '/' + test_name + '/' + test_name + '.diag_attributes.yaml')
-      diag_attributes_yaml = files(test_root_dir + '/' + test_name + '/' + test_name + '.diag_attributes.yaml')
+      diag_attributes_yaml_path = test_root_dir + '/' + test_name + '/' + test_name + '.diag_attributes.yaml'
+      diag_attributes_yaml = files(diag_attributes_yaml_path)
       break
     endif
   endforeach
 
   test_jumpstart_sources = jumpstart_sources
   if get_option('jumpstart_backend') == 'rust'
-    diag_yaml_full_path = meson.project_source_root() / diag_attributes_yaml[0]
+    diag_yaml_full_path = meson.project_source_root() / diag_attributes_yaml_path
 
     rust_libs = custom_target(
       'rust_libs_' + test_name,
