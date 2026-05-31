@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 Jerin Joy
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "jumpstart"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+
+[build-dependencies]
+cc = "1.0"
+
+[profile.dev]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
