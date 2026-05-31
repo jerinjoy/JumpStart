@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Jerin Joy
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[build]
+target = "riscv64gc-unknown-none-elf"
+
+[target.riscv64gc-unknown-none-elf]
+rustflags = ["-C", "target-feature=+zihintpause"]

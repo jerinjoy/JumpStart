@@ -93,6 +93,13 @@ def main():
         choices=["release", "minsize", "debug", "debugoptimized"],
     )
     parser.add_argument(
+        "--jumpstart_backend",
+        help="The backend to use for JumpStart.",
+        type=str,
+        default="rust",
+        choices=["c", "rust"],
+    )
+    parser.add_argument(
         "--override_meson_options",
         "--override_meson",
         help="Override the meson options from meson.options. Format: 'key=value' (e.g., 'generate_trace=true').",
@@ -248,6 +255,9 @@ def main():
 
     if args.buildtype is not None:
         args.override_meson_options.append(f"buildtype={args.buildtype}")
+
+    if args.jumpstart_backend is not None:
+        args.override_meson_options.append(f"jumpstart_backend={args.jumpstart_backend}")
 
     if args.custom_rcode_bin is not None:
         args.override_meson_options.append(f"custom_rcode_bin={args.custom_rcode_bin}")

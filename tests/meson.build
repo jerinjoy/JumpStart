@@ -53,10 +53,31 @@ foreach unit_test : unit_tests
     endforeach
 
     if fs.is_file(test_root_dir + '/' + test_name + '/' + test_name + '.diag_attributes.yaml')
-      diag_attributes_yaml = files(test_root_dir + '/' + test_name + '/' + test_name + '.diag_attributes.yaml')
+      diag_attributes_yaml_path = test_root_dir + '/' + test_name + '/' + test_name + '.diag_attributes.yaml'
+      diag_attributes_yaml = files(diag_attributes_yaml_path)
       break
     endif
   endforeach
+
+  test_jumpstart_sources = jumpstart_sources
+  if get_option('jumpstart_backend') == 'rust'
+    diag_yaml_full_path = meson.project_source_root() / diag_attributes_yaml_path
+
+    rust_libs = custom_target(
+      'rust_libs_' + test_name,
+      input : [diag_attributes_yaml] + rust_sources,
+      output : ['libjumpstart_' + test_name + '.a', 'libjumpstart_asm_' + test_name + '.a'],
+      command : [
+        'sh', '-c',
+        '(cd ' + meson.project_source_root() + ' && ' +
+        'DIAG_YAML=' + diag_yaml_full_path + ' ' + cargo.full_path() + ' build ' + cargo_build_flags + ') && ' +
+        'cp ' + meson.project_source_root() + '/target/' + cargo_target + '/' + cargo_out_dir + '/libjumpstart.a @OUTPUT0@ && ' +
+        'cp $(find ' + meson.project_source_root() + '/target/' + cargo_target + '/' + cargo_out_dir + '/build -name libjumpstart_asm.a | head -n 1) @OUTPUT1@'
+      ],
+      console : true
+    )
+    test_jumpstart_sources = [jumpstart_sources, rust_libs]
+  endif
 
   test_defines_file_name = test_name + '.defines.h'
   diag_source_generator_output = custom_target(
@@ -75,10 +96,10 @@ foreach unit_test : unit_tests
   test_data_structures = diag_source_generator_output[3]
 
   test_exe = executable(test_name,
-                        sources: [jumpstart_sources, test_sources],
+                        sources: [test_jumpstart_sources, test_sources],
                         include_directories: jumpstart_includes,
                         c_args: default_c_args + ['-include', test_defines.full_path(), '-include', test_data_structures.full_path()],
-                        link_args: ['-T' + linker_script.full_path()],
+                        link_args: ['-T' + linker_script.full_path(), '-Wl,--gc-sections'],
                         link_depends: linker_script,
                         dependencies: declare_dependency(sources: test_defines)
                         )

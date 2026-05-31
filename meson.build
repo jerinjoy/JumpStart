@@ -112,8 +112,55 @@ if diag_attribute_overrides.length() > 0
   endforeach
 endif
 
+if get_option('jumpstart_backend') == 'rust'
+  cargo = find_program('cargo')
+  cargo_target = 'riscv64gc-unknown-none-elf'
+
+  cargo_build_flags = '--target ' + cargo_target
+  cargo_out_dir = 'debug'
+  if get_option('buildtype') == 'release' or get_option('buildtype') == 'minsize'
+    cargo_build_flags += ' --release'
+    cargo_out_dir = 'release'
+  endif
+
+  rust_sources = files(
+    'Cargo.toml',
+    'build.rs',
+    'src/lib.rs',
+    'src/cpu_bits.rs',
+    'src/heap.rs',
+    'src/lock.rs',
+    'src/string.rs',
+    'src/tablewalk.rs',
+    'src/thread_attr_fns.rs',
+    'src/time.rs',
+    'src/trap.rs',
+    'src/uart.rs',
+    'src/utils.rs',
+  )
+endif
+
 if diag_attributes_yaml != '' and diag_sources.length() > 0
   diag_name = get_option('diag_name')
+  if get_option('jumpstart_backend') == 'rust'
+    diag_yaml_full_path = meson.project_source_root() / diag_attributes_yaml
+
+    rust_libs = custom_target(
+      'rust_libs_' + diag_name,
+      input : [diag_attributes_yaml] + rust_sources,
+      output : ['libjumpstart.a', 'libjumpstart_asm.a'],
+      command : [
+        'sh', '-c',
+        '(cd ' + meson.project_source_root() + ' && ' +
+        'DIAG_YAML=' + diag_yaml_full_path + ' ' + cargo.full_path() + ' build ' + cargo_build_flags + ') && ' +
+        'cp ' + meson.project_source_root() + '/target/' + cargo_target + '/' + cargo_out_dir + '/libjumpstart.a @OUTPUT0@ && ' +
+        'cp $(find ' + meson.project_source_root() + '/target/' + cargo_target + '/' + cargo_out_dir + '/build -name libjumpstart_asm.a | head -n 1) @OUTPUT1@'
+      ],
+      console : true
+    )
+    jumpstart_sources += rust_libs
+  endif
+
 
   diag_source_generator_output = custom_target(
                                 'Generate diag attributes related source files for ' + diag_name,
@@ -134,7 +181,7 @@ if diag_attributes_yaml != '' and diag_sources.length() > 0
                         sources: [jumpstart_sources, diag_sources],
                         include_directories: jumpstart_includes,
                         c_args: default_c_args + ['-include', diag_defines.full_path(), '-include', diag_data_structures.full_path()],
-                        link_args: ['-T' + linker_script.full_path()],
+                        link_args: ['-T' + linker_script.full_path()] + (get_option('jumpstart_backend') == 'rust' ? ['-Wl,--gc-sections'] : []),
                         link_depends: linker_script,
                         dependencies: declare_dependency(sources: diag_defines)
                         )

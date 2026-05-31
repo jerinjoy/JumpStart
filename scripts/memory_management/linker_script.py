@@ -268,9 +268,25 @@ class LinkerScript:
         file.write("SECTIONS\n{\n")
         defined_sections = []
 
-        # The linker script lays out the diag in physical memory. The
-        # mappings are already sorted by PA.
-        for section in self.get_sections():
+        # To avoid swallowing specific sections into general ones (e.g. .data.1 into .data),
+        # we generate the output sections in order of their subsection specificity.
+        # Longer names are considered more specific.
+        # Since we use explicit AT() and VMA addresses, the order in the SECTIONS block
+        # doesn't have to follow the PA/VA order.
+        #
+        # Note: We exclude '.text.startup' when calculating specificity. Otherwise, '.text.startup'
+        # (inserted automatically for C main) would artificially boost the '.text' section's
+        # specificity score above specific sections like '.text.smode', causing '.text' to be
+        # sorted first and swallow them.
+        sections_by_specificity = sorted(
+            self.get_sections(),
+            key=lambda s: max(
+                [len(sub) for sub in s.get_subsections() if sub != ".text.startup"] or [0]
+            ),
+            reverse=True,
+        )
+
+        for section in sections_by_specificity:
             file.write(f"\n\n   /* {','.join(section.get_subsections())}:\n")
             file.write(
                 f"       PA Range: {hex(section.get_phys_start_address())} - {hex(section.get_phys_end_address())}\n"
@@ -288,7 +304,64 @@ class LinkerScript:
             )
             for section_name in section.get_subsections():
                 assert section_name not in defined_sections
-                file.write(f"      *({section_name})\n")
+                # Determine if this subsection should be KEEP'd or allowed to be
+                # garbage-collected by --gc-sections.
+                #
+                # Jumpstart infrastructure and guard sections must always be kept.
+                # Diag/user-defined sections (simple names like .data.1, .text, .bss)
+                # must also be kept since they may be referenced by address only.
+                #
+                # Standard library subsections (Rust/C++ mangled names, core/alloc/
+                # compiler-builtins, libc math/string functions) should NOT be kept
+                # to allow --gc-sections to eliminate dead code.
+                #
+                # Catch-all wildcard entries like .rodata.*, .bss.*, .sdata.*,
+                # .data.*, .text.* match all subsections of the base section and
+                # should also be GC-able.
+                is_stdlib = any(
+                    [
+                        section_name.startswith(p)
+                        for p in [
+                            ".text._ZN",
+                            ".text._R",
+                            ".text.rust_",
+                            ".text.core",
+                            ".text.alloc",
+                            ".text.compiler_builtins",
+                            ".text.memcpy",
+                            ".text.memset",
+                            ".text.memmove",
+                            ".text.memcmp",
+                            ".text.strlen",
+                            ".text.fmax",
+                            ".text.fmin",
+                            ".text.fmod",
+                            ".text.fmaximum",
+                            ".text.fminimum",
+                            ".text.hypot",
+                            ".text.ldexp",
+                            ".text.lgamma",
+                            ".text.log",
+                            ".text.pow",
+                            ".text.rint",
+                            ".text.round",
+                            ".text.sin",
+                            ".text.sqrt",
+                            ".text.tan",
+                            ".text.tgamma",
+                            ".text.trunc",
+                            ".text.unlikely",
+                            ".rodata.*",
+                            ".sdata.*",
+                            ".bss.*",
+                            ".data.*",
+                        ]
+                    ]
+                )
+                if is_stdlib:
+                    file.write(f"      *({section_name} {section_name}.*)\n")
+                else:
+                    file.write(f"      KEEP(*({section_name}))\n")
                 defined_sections.append(section_name)
             if section.is_padded():
                 file.write("      BYTE(0)\n")

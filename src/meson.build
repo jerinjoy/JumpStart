@@ -2,6 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+jumpstart_sources = []
+
+if get_option('rivos_internal_build') == true
+  jumpstart_source_attributes_yaml = files('rivos_internal/jumpstart_rivos_internal_source_attributes.yaml')
+else
+  jumpstart_source_attributes_yaml = files('public/jumpstart_public_source_attributes.yaml')
+endif
+
 mmode_sources = []
 smode_sources = []
 umode_sources = []
@@ -14,15 +22,14 @@ else
   subdir('public')
 endif
 
-
-jumpstart_sources = []
-
-if 'mmode' in riscv_priv_modes_enabled
-  jumpstart_sources += mmode_sources
-endif
-if 'smode' in riscv_priv_modes_enabled
-  jumpstart_sources += smode_sources
-endif
-if 'umode' in riscv_priv_modes_enabled
-  jumpstart_sources += umode_sources
+if get_option('jumpstart_backend') == 'c'
+  if 'mmode' in riscv_priv_modes_enabled
+    jumpstart_sources += mmode_sources
+  endif
+  if 'smode' in riscv_priv_modes_enabled
+    jumpstart_sources += smode_sources
+  endif
+  if 'umode' in riscv_priv_modes_enabled
+    jumpstart_sources += umode_sources
+  endif
 endif
