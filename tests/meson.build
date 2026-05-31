@@ -60,7 +60,7 @@ foreach unit_test : unit_tests
 
   test_jumpstart_sources = jumpstart_sources
   if get_option('jumpstart_backend') == 'rust'
-    diag_yaml_full_path = diag_attributes_yaml[0].full_path()
+    diag_yaml_full_path = meson.project_source_root() / diag_attributes_yaml[0]
 
     rust_libs = custom_target(
       'rust_libs_' + test_name,

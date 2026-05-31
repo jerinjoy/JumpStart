@@ -20,9 +20,7 @@ def main():
     env_parser = argparse.ArgumentParser(description=__doc__, add_help=False)
     env_manager = get_environment_manager()
     env_names = sorted(env_manager.list_visible_environments().keys())
-    env_help = (
-        f"Environment to build for. Available environments: {', '.join(env_names)}"
-    )
+    env_help = f"Environment to build for. Available environments: {', '.join(env_names)}"
 
     env_parser.add_argument(
         "--environment",
@@ -249,13 +247,9 @@ def main():
         parser.error("--environment must be specified")
 
     if args.verbose:
-        log.basicConfig(
-            format="%(levelname)s: [%(threadName)s]: %(message)s", level=log.DEBUG
-        )
+        log.basicConfig(format="%(levelname)s: [%(threadName)s]: %(message)s", level=log.DEBUG)
     else:
-        log.basicConfig(
-            format="%(levelname)s: [%(threadName)s]: %(message)s", level=log.INFO
-        )
+        log.basicConfig(format="%(levelname)s: [%(threadName)s]: %(message)s", level=log.INFO)
 
     script_meson_option_overrides = {}
 
@@ -263,17 +257,13 @@ def main():
         args.override_meson_options.append(f"buildtype={args.buildtype}")
 
     if args.jumpstart_backend is not None:
-        args.override_meson_options.append(
-            f"jumpstart_backend={args.jumpstart_backend}"
-        )
+        args.override_meson_options.append(f"jumpstart_backend={args.jumpstart_backend}")
 
     if args.custom_rcode_bin is not None:
         args.override_meson_options.append(f"custom_rcode_bin={args.custom_rcode_bin}")
 
     if args.active_cpu_mask_override is not None:
-        args.override_diag_attributes.append(
-            f"active_cpu_mask={args.active_cpu_mask_override}"
-        )
+        args.override_diag_attributes.append(f"active_cpu_mask={args.active_cpu_mask_override}")
 
     # Enforce argument compatibility for include/exclude options
     if args.include_diags is not None and args.build_manifest is None:

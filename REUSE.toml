@@ -12,3 +12,9 @@ path = ["CODE_OF_CONDUCT.md", "CONTRIBUTING.md"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Meta Platforms, Inc."
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["Cargo.lock"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Jerin Joy"
+SPDX-License-Identifier = "Apache-2.0"

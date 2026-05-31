@@ -23,12 +23,8 @@ class LinkerScriptSection:
 
         # Get VA as linker script is supposed to use Virtual address. For M-mode and R-code mappings
         # fallback to PA as these don't have a virtual address.
-        self.virt_start_address = entry.get_field(
-            TranslationStage.get_translates_from(stage)
-        )
-        self.phys_start_address = entry.get_field(
-            TranslationStage.get_translates_to(stage)
-        )
+        self.virt_start_address = entry.get_field(TranslationStage.get_translates_from(stage))
+        self.phys_start_address = entry.get_field(TranslationStage.get_translates_to(stage))
         if self.virt_start_address is None:
             self.virt_start_address = self.phys_start_address
 
@@ -111,9 +107,7 @@ class LinkerScriptSection:
             self.phys_start_address = other_section.get_phys_start_address()
 
         if self.get_phys_end_address() < other_section.get_phys_end_address():
-            self.size = (
-                other_section.get_phys_end_address() - self.get_phys_start_address()
-            )
+            self.size = other_section.get_phys_end_address() - self.get_phys_start_address()
 
         if other_section.is_padded():
             self.padded = True
@@ -147,8 +141,8 @@ class LinkerScript:
         for entry in mappings_with_linker_sections:
             new_section = LinkerScriptSection(entry)
 
-            existing_sections_with_matching_subsections = (
-                self.find_sections_with_subsections(new_section.get_subsections())
+            existing_sections_with_matching_subsections = self.find_sections_with_subsections(
+                new_section.get_subsections()
             )
 
             if len(existing_sections_with_matching_subsections) == 0:
@@ -204,17 +198,11 @@ class LinkerScript:
 
             # Check section is within allowed ELF address range if specified
             if self.elf_start_address is not None or self.elf_end_address is not None:
-                if (
-                    self.elf_start_address is not None
-                    and section_start < self.elf_start_address
-                ):
+                if self.elf_start_address is not None and section_start < self.elf_start_address:
                     raise ValueError(
                         f"{self.sections[i]} is outside allowed ELF address range - start address {hex(section_start)} is less than elf_start_address {hex(self.elf_start_address)}"
                     )
-                if (
-                    self.elf_end_address is not None
-                    and section_end > self.elf_end_address
-                ):
+                if self.elf_end_address is not None and section_end > self.elf_end_address:
                     raise ValueError(
                         f"{self.sections[i]} is outside allowed ELF address range - end address {hex(section_end)} is greater than elf_end_address {hex(self.elf_end_address)}"
                     )
@@ -274,9 +262,7 @@ class LinkerScript:
             memory_name = section.get_top_level_name().replace(".", "_").upper()
             start_addr = hex(section.get_virt_start_address())
             size = hex(section.get_size())
-            file.write(
-                f"    {memory_name} (rwx) : ORIGIN = {start_addr}, LENGTH = {size}\n"
-            )
+            file.write(f"    {memory_name} (rwx) : ORIGIN = {start_addr}, LENGTH = {size}\n")
         file.write("}\n\n")
 
         file.write("SECTIONS\n{\n")
@@ -295,8 +281,7 @@ class LinkerScript:
         sections_by_specificity = sorted(
             self.get_sections(),
             key=lambda s: max(
-                [len(sub) for sub in s.get_subsections() if sub != ".text.startup"]
-                or [0]
+                [len(sub) for sub in s.get_subsections() if sub != ".text.startup"] or [0]
             ),
             reverse=True,
         )
@@ -388,9 +373,7 @@ class LinkerScript:
             )
             file.write(f"  {top_level_section_variable_name_prefix}_END = .;\n")
 
-        file.write(
-            "\n\n/DISCARD/ : { *(" + " ".join(self.get_discard_sections()) + ") }\n"
-        )
+        file.write("\n\n/DISCARD/ : { *(" + " ".join(self.get_discard_sections()) + ") }\n")
         file.write("\n}\n")
 
         # Specify separate load segments in the program headers for the
