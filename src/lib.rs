@@ -8,6 +8,7 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 pub mod cpu_bits;
+pub mod generated;
 pub mod heap;
 pub mod lock;
 pub mod string;
@@ -79,7 +80,7 @@ macro_rules! read_csr {
 /// the UART register without any synchronisation.
 #[doc(hidden)]
 pub fn uart_write_str_direct(s: &str) {
-    let ptr = crate::uart::UART_BASE_ADDRESS as *mut u8;
+    let ptr = crate::generated::UART_BASE_ADDRESS as *mut u8;
     for byte in s.bytes() {
         unsafe {
             ptr.write_volatile(byte);

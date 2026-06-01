@@ -8,9 +8,7 @@ use core::ffi::{c_char, c_int};
 use core::fmt::{Error, Write};
 use core::sync::atomic::{AtomicU8, Ordering};
 
-// Pull in the generated constants from OUT_DIR.
-// This gives us UART_BASE_ADDRESS and other defines as Rust constants.
-include!(concat!(env!("OUT_DIR"), "/jumpstart_data_structures.rs"));
+use crate::generated::UART_BASE_ADDRESS;
 
 pub struct Uart {
     base_address: usize,

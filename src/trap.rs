@@ -8,9 +8,9 @@
 use crate::cpu_bits::{MCAUSE_EC_MASK, MCAUSE_INT_FLAG};
 use crate::thread_attr_fns;
 
-// 2. Pull in the generated data structures from OUT_DIR
+// 2. Import generated data structures from the single inclusion point.
 // This gives us `trap_override_attributes`, `NUM_MMODE_EXCEPTION_HANDLER_OVERRIDES`, etc.
-include!(concat!(env!("OUT_DIR"), "/jumpstart_data_structures.rs"));
+use crate::generated::*;
 
 // In RISC-V, the highest bit of mcause indicates an interrupt,
 // and the lower bits indicate the exception code.
