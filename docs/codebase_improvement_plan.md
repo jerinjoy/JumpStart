@@ -89,7 +89,14 @@ after Path 2.
 
 ---
 
-### 1B. Massive Code Duplication (m-mode vs s-mode)
+### 1B. Massive Code Duplication (m-mode vs s-mode) ✅
+
+**Status:** Completed as part of 1A refactoring.  The shared logic in `utils.rs`
+was extracted into parametric functions (`random_next`, `try_get_seed`, `set_seed`)
+that take the mode-dependent data as arguments.  The remaining shim pairs
+(`delay_us_from_smode`/`_from_mmode`, `get_random_number_from_smode`/`_from_mmode`)
+are unavoidable — they differ only in `link_section`, which is a hardware
+requirement.
 
 **Problem:** `utils.rs` contains two nearly-identical copies of:
 - `try_get_seed` (smode + mmode)
