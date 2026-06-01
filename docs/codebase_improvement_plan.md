@@ -292,6 +292,9 @@ top-level `Cargo.toml` metadata) and have both `build.rs` and
 
 **Affected files:** `build.rs`, `cross_compile/public/gcc_options.txt`
 
+**Status:** ✅ Completed — ISA string extracted to `const` in `build.rs`
+with sync comments in both files. (commit `89d39f6`)
+
 ---
 
 ### 2L. Per-Diagnostic Cargo Rebuild (Path 1 vs Path 2)
@@ -420,6 +423,9 @@ orchestration all in one ~200-line function.
 **Fix:** Run `git rm -r` on the cache dirs and verify `.gitignore` is
 working.  Consider adding `**/__pycache__/` to be explicit.  This is a
 30-second fix — just do it.
+
+**Status:** ✅ Completed — Added `**/__pycache__/` to `.gitignore` and
+removed all `__pycache__` directories. (commit `89d39f6`)
 
 ---
 
@@ -603,6 +609,9 @@ channel = "nightly-2026-05-01"   # or whichever is known to work
 targets = ["riscv64gc-unknown-none-elf"]
 ```
 
+**Status:** ✅ Completed — Created `rust-toolchain.toml` pinning
+`nightly-2026-05-01` with `riscv64gc-unknown-none-elf` target. (commit `89d39f6`)
+
 ---
 
 ### N2. `#![forbid(unsafe_op_in_unsafe_fn)]` — Immediate Add (P0, XS)
@@ -614,6 +623,10 @@ operations — exactly the pattern this plan criticizes.  Add it immediately,
 the safe-core extraction.
 
 **Related:** See item 4W for full clippy configuration.
+
+**Status:** ✅ Completed — Added `#![forbid(unsafe_op_in_unsafe_fn)]` to
+`lib.rs`; all existing `unsafe fn` bodies already had `unsafe {}` blocks so
+it compiles cleanly. (commit `89d39f6`)
 
 ---
 
@@ -653,6 +666,9 @@ Beyond this specific bug, do a targeted audit of all exported FFI functions
 for semantic deviations from the C originals before any refactoring.
 
 **Affected file:** `src/time.rs`
+
+**Status:** ✅ Completed — Fixed `tv_usec` to use `% 1_000_000` per POSIX
+instead of the total microsecond count. (commit `89d39f6`)
 
 ---
 
@@ -734,6 +750,11 @@ duplicate symbol definitions and making the per-diagnostic coupling implicit.
 **Fix:** Consolidate to a single inclusion point — either in `lib.rs` or a
 dedicated `src/generated.rs` module that re-exports all symbols.  This makes
 the coupling explicit in one place and is a stepping stone toward Path 2.
+
+**Status:** ✅ Completed — Created `src/generated.rs` as the single
+inclusion point; `uart.rs`, `trap.rs`, and `thread_attr_fns.rs` now import
+from `crate::generated` instead of each doing their own `include!`.
+(commit `8839a0b`)
 
 ---
 
