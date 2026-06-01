@@ -81,7 +81,7 @@ pub unsafe extern "C" fn gettimeofday(tv: *mut timeval, _tz: *mut c_void) -> i32
     let timer_ticks = read_time_internal();
 
     let seconds = timer_ticks / (CPU_CLOCK_FREQUENCY_IN_MHZ * 1_000_000);
-    let microseconds = timer_ticks / CPU_CLOCK_FREQUENCY_IN_MHZ;
+    let microseconds = (timer_ticks / CPU_CLOCK_FREQUENCY_IN_MHZ) % 1_000_000;
 
     if !tv.is_null() {
         unsafe {

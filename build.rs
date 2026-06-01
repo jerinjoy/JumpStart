@@ -8,6 +8,10 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Command;
 
+/// RISC-V ISA string — single source of truth, must match cross_compile/public/gcc_options.txt.
+/// If you change this, update gcc_options.txt too (and vice versa).
+const RISCV_MARCH: &str = "rv64gcvh_zba_zbb_zbs_zihintpause";
+
 fn main() {
     // Tell Cargo to re-run this script if any of these files change
     println!("cargo:rerun-if-changed=src/common/jumpstart.mmode.S");
@@ -56,7 +60,7 @@ fn main() {
     cc::Build::new()
         .compiler("riscv64-unknown-elf-gcc")
         // We need the Vector (v) extension for the vsetivli instruction!
-        .flag("-march=rv64gcvh_zba_zbb_zbs_zihintpause")
+        .flag(&format!("-march={}", RISCV_MARCH))
         .flag("-mabi=lp64d")
         .flag("-mcmodel=medany")
         // Tell gcc to include the headers we just dynamically generated

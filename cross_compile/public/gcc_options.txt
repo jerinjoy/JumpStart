@@ -2,5 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# ISA string must be kept in sync with build.rs (RISCV_MARCH constant).
 [constants]
 target_args = ['-march=rv64gcvh_zba_zbb_zbs_zihintpause']

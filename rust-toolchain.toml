@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Jerin Joy
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[toolchain]
+channel = "nightly-2026-05-01"
+targets = ["riscv64gc-unknown-none-elf"]
