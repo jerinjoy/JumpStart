@@ -44,7 +44,12 @@ The project has four major layers:
 
 ## 1. Rust Code Quality
 
-### 1A. Unsafe Proliferation — Separate Safe Core from FFI Shims
+### 1A. Unsafe Proliferation — Separate Safe Core from FFI Shims ✅
+
+**Status:** Completed (commit `173f2be`..`8320ba8`).  Five files refactored:
+`string.rs`, `time.rs`, `uart.rs`, `utils.rs`, `heap.rs`.
+All 43 tests pass.  `trap.rs` and `thread_attr_fns.rs` deferred —
+they are coupled to `include!`-generated structs and need Path 2 first.
 
 **Problem:** Almost every Rust function is `#[unsafe(no_mangle)] pub extern "C" fn`.
 The code reads like C-in-Rust: raw pointers, manual null checks, C-style

@@ -381,20 +381,16 @@ impl JumpStartHeaps {
     }
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn setup_heap(
-    heap_start: usize,
-    heap_end: usize,
-    backing_memory: u8,
-    memory_type: u8,
-) {
-    unsafe { HEAPS.setup_heap(heap_start, heap_end, backing_memory, memory_type) };
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// Safe Rust core — no `extern "C"`, no `no_mangle`, no `link_section`.
+// These are the inner functions that the C shims delegate to.
+// ═══════════════════════════════════════════════════════════════════════════════
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn malloc(size: usize) -> *mut u8 {
+/// # Safety
+///
+/// Caller must ensure `size` is valid for the global allocator.
+#[inline]
+unsafe fn malloc_impl(size: usize) -> *mut u8 {
     if let Ok(layout) = Layout::from_size_align(size, MIN_HEAP_ALLOCATION_SIZE) {
         unsafe { HEAPS.alloc(layout) }
     } else {
@@ -402,9 +398,11 @@ pub unsafe extern "C" fn malloc(size: usize) -> *mut u8 {
     }
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn free(ptr: *mut u8) {
+/// # Safety
+///
+/// `ptr` must be a pointer previously returned by `malloc` or null.
+#[inline]
+unsafe fn free_impl(ptr: *mut u8) {
     if ptr.is_null() {
         return;
     }
@@ -413,22 +411,51 @@ pub unsafe extern "C" fn free(ptr: *mut u8) {
     unsafe { HEAPS.dealloc(ptr, layout) };
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn calloc(nmemb: usize, size: usize) -> *mut u8 {
+/// # Safety
+///
+/// Caller must ensure `s` points to a writable buffer of at least `n` bytes.
+#[inline]
+unsafe fn memset_impl(s: *mut u8, c: i32, n: usize) -> *mut u8 {
+    for i in 0..n {
+        // SAFETY: caller guarantees s points to a buffer of at least n bytes
+        unsafe { *s.add(i) = c as u8 };
+    }
+    s
+}
+
+/// # Safety
+///
+/// Caller must ensure `dest` and `src` point to valid buffers of at least `n` bytes.
+#[inline]
+unsafe fn memcpy_impl(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
+    for i in 0..n {
+        // SAFETY: caller guarantees dest and src point to buffers of at least n bytes
+        unsafe { *dest.add(i) = *src.add(i) };
+    }
+    dest
+}
+
+/// # Safety
+///
+/// `nmemb * size` must not overflow; caller must ensure the allocation is valid.
+#[inline]
+unsafe fn calloc_impl(nmemb: usize, size: usize) -> *mut u8 {
     let total_size = nmemb.saturating_mul(size);
+    // SAFETY: total_size is computed safely via saturating_mul
     unsafe {
-        let ptr = malloc(total_size);
+        let ptr = malloc_impl(total_size);
         if !ptr.is_null() {
-            memset(ptr, 0, total_size);
+            memset_impl(ptr, 0, total_size);
         }
         ptr
     }
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn memalign(alignment: usize, size: usize) -> *mut u8 {
+/// # Safety
+///
+/// `alignment` must be a power of two.  `size` must be valid for the allocator.
+#[inline]
+unsafe fn memalign_impl(alignment: usize, size: usize) -> *mut u8 {
     if !alignment.is_power_of_two() {
         return core::ptr::null_mut();
     }
@@ -439,13 +466,11 @@ pub unsafe extern "C" fn memalign(alignment: usize, size: usize) -> *mut u8 {
     }
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn malloc_from_memory(
-    size: usize,
-    backing_memory: u8,
-    memory_type: u8,
-) -> *mut u8 {
+/// # Safety
+///
+/// Caller must ensure `size`, `backing_memory`, and `memory_type` are valid.
+#[inline]
+unsafe fn malloc_from_memory_impl(size: usize, backing_memory: u8, memory_type: u8) -> *mut u8 {
     if let Ok(layout) = Layout::from_size_align(size, MIN_HEAP_ALLOCATION_SIZE) {
         unsafe { HEAPS.alloc_from_memory(layout, backing_memory, memory_type) }
     } else {
@@ -453,33 +478,32 @@ pub unsafe extern "C" fn malloc_from_memory(
     }
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn free_from_memory(ptr: *mut u8, backing_memory: u8, memory_type: u8) {
-    unsafe { HEAPS.dealloc_from_memory(ptr, backing_memory, memory_type) };
-}
-
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn calloc_from_memory(
+/// # Safety
+///
+/// See `calloc_impl` and `malloc_from_memory_impl`.
+#[inline]
+unsafe fn calloc_from_memory_impl(
     nmemb: usize,
     size: usize,
     backing_memory: u8,
     memory_type: u8,
 ) -> *mut u8 {
     let total_size = nmemb.saturating_mul(size);
+    // SAFETY: total_size is computed safely via saturating_mul
     unsafe {
-        let ptr = malloc_from_memory(total_size, backing_memory, memory_type);
+        let ptr = malloc_from_memory_impl(total_size, backing_memory, memory_type);
         if !ptr.is_null() {
-            memset(ptr, 0, total_size);
+            memset_impl(ptr, 0, total_size);
         }
         ptr
     }
 }
 
-#[unsafe(no_mangle)]
-#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
-pub unsafe extern "C" fn memalign_from_memory(
+/// # Safety
+///
+/// See `memalign_impl` and `malloc_from_memory_impl`.
+#[inline]
+unsafe fn memalign_from_memory_impl(
     alignment: usize,
     size: usize,
     backing_memory: u8,
@@ -495,22 +519,104 @@ pub unsafe extern "C" fn memalign_from_memory(
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FFI shims — one-liners that carry ONLY the C ABI baggage.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn setup_heap(
+    heap_start: usize,
+    heap_end: usize,
+    backing_memory: u8,
+    memory_type: u8,
+) {
+    // SAFETY: the C caller is responsible for passing valid heap bounds
+    unsafe { HEAPS.setup_heap(heap_start, heap_end, backing_memory, memory_type) };
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn malloc(size: usize) -> *mut u8 {
+    // SAFETY: the C caller is responsible for passing a valid size
+    unsafe { malloc_impl(size) }
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn free(ptr: *mut u8) {
+    // SAFETY: the C caller is responsible for passing a valid pointer
+    unsafe { free_impl(ptr) };
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn calloc(nmemb: usize, size: usize) -> *mut u8 {
+    // SAFETY: the C caller is responsible for passing valid nmemb and size
+    unsafe { calloc_impl(nmemb, size) }
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn memalign(alignment: usize, size: usize) -> *mut u8 {
+    // SAFETY: the C caller is responsible for passing valid alignment and size
+    unsafe { memalign_impl(alignment, size) }
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn malloc_from_memory(
+    size: usize,
+    backing_memory: u8,
+    memory_type: u8,
+) -> *mut u8 {
+    // SAFETY: the C caller is responsible for passing valid arguments
+    unsafe { malloc_from_memory_impl(size, backing_memory, memory_type) }
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn free_from_memory(ptr: *mut u8, backing_memory: u8, memory_type: u8) {
+    // SAFETY: the C caller is responsible for passing a valid pointer
+    unsafe { HEAPS.dealloc_from_memory(ptr, backing_memory, memory_type) };
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn calloc_from_memory(
+    nmemb: usize,
+    size: usize,
+    backing_memory: u8,
+    memory_type: u8,
+) -> *mut u8 {
+    // SAFETY: the C caller is responsible for passing valid arguments
+    unsafe { calloc_from_memory_impl(nmemb, size, backing_memory, memory_type) }
+}
+
+#[unsafe(no_mangle)]
+#[unsafe(link_section = ".jumpstart.cpu.text.smode")]
+pub unsafe extern "C" fn memalign_from_memory(
+    alignment: usize,
+    size: usize,
+    backing_memory: u8,
+    memory_type: u8,
+) -> *mut u8 {
+    // SAFETY: the C caller is responsible for passing valid arguments
+    unsafe { memalign_from_memory_impl(alignment, size, backing_memory, memory_type) }
+}
+
 #[unsafe(no_mangle)]
 #[unsafe(link_section = ".jumpstart.cpu.text.smode")]
 pub unsafe extern "C" fn memset(s: *mut u8, c: i32, n: usize) -> *mut u8 {
-    for i in 0..n {
-        unsafe { *s.add(i) = c as u8 };
-    }
-    s
+    // SAFETY: the C caller is responsible for passing a valid buffer
+    unsafe { memset_impl(s, c, n) }
 }
 
 #[unsafe(no_mangle)]
 #[unsafe(link_section = ".jumpstart.cpu.text.smode")]
 pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut u8 {
-    for i in 0..n {
-        unsafe { *dest.add(i) = *src.add(i) };
-    }
-    dest
+    // SAFETY: the C caller is responsible for passing valid buffers
+    unsafe { memcpy_impl(dest, src, n) }
 }
 
 pub fn test_allocation() {
