@@ -56,7 +56,7 @@ fn main() {
     cc::Build::new()
         .compiler("riscv64-unknown-elf-gcc")
         // We need the Vector (v) extension for the vsetivli instruction!
-        .flag("-march=rv64gcv_zbb_zbs_zihintpause")
+        .flag("-march=rv64gcvh_zba_zbb_zbs_zihintpause")
         .flag("-mabi=lp64d")
         .flag("-mcmodel=medany")
         // Tell gcc to include the headers we just dynamically generated
