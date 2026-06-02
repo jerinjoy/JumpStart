@@ -119,7 +119,15 @@ near-identical ones.
 
 ---
 
-### 1C. `string.rs` is a C Library, Not Rust
+### 1C. `string.rs` is a C Library, Not Rust ✅
+
+**Status:** Completed (commit `8bcc120`).  Raw pointer iteration in
+`str_len`, `str_cmp`, and `str_copy` was restructured with cleaner
+`unsafe` block patterns.  `CStr::from_ptr` and `copy_nonoverlapping`
+could not be adopted due to an LLVM codegen bug on
+`riscv64gc-unknown-none-elf` that affects both nightly and stable —
+`from_ptr` generates an infinite loop and `ptr.add(offset)` inside
+loops is miscompiled.  All 43 tests pass.
 
 **Problem:** `src/string.rs` reimplements `strcpy`, `strcmp`, `strlen`,
 `islower`, `isupper`, `tolower`, `toupper` as `extern "C"` functions

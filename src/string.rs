@@ -68,9 +68,8 @@ unsafe fn str_copy(dest: *mut c_char, src: *const c_char) -> *mut c_char {
             s = s.add(1);
         }
     }
-    unsafe {
-        *d = 0;
-    }
+    // SAFETY: d points to a valid, writable location within the dest buffer
+    unsafe { *d = 0 };
     dest
 }
 
@@ -83,16 +82,19 @@ unsafe fn str_cmp(s1: *const c_char, s2: *const c_char) -> c_int {
         return -1;
     }
 
-    let mut p1 = s1 as *const u8;
-    let mut p2 = s2 as *const u8;
-
+    let mut p1 = s1;
+    let mut p2 = s2;
     // SAFETY: caller guarantees s1 and s2 are valid, non-null pointers
-    while unsafe { *p1 != 0 && *p1 == *p2 } {
+    // to null-terminated C strings
+    loop {
+        let c1 = unsafe { *p1 };
+        let c2 = unsafe { *p2 };
+        if c1 != c2 || c1 == 0 {
+            return (c1 as c_int) - (c2 as c_int);
+        }
         p1 = unsafe { p1.add(1) };
         p2 = unsafe { p2.add(1) };
     }
-
-    unsafe { (*p1 as c_int) - (*p2 as c_int) }
 }
 
 /// # Safety
@@ -103,9 +105,10 @@ unsafe fn str_len(s: *const c_char) -> usize {
     if s.is_null() {
         return 0;
     }
-    let mut len = 0;
     let mut p = s;
-    // SAFETY: caller guarantees s is a valid, non-null pointer
+    let mut len: usize = 0;
+    // SAFETY: caller guarantees s is a valid, non-null pointer to a
+    // null-terminated C string; the loop stops at the NUL terminator
     while unsafe { *p } != 0 {
         len += 1;
         p = unsafe { p.add(1) };

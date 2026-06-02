@@ -3,5 +3,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 [toolchain]
-channel = "nightly-2026-05-01"
+channel = "stable"
 targets = ["riscv64gc-unknown-none-elf"]
